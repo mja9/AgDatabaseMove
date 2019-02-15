@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AgDatabaseMove.Cli\**" />
+    <Compile Remove="AgDatabaseMove.Integration\**" />
+    <Compile Remove="AgDatabaseMove.Unit\**" />
+    <EmbeddedResource Remove="AgDatabaseMove.Cli\**" />
+    <EmbeddedResource Remove="AgDatabaseMove.Integration\**" />
+    <EmbeddedResource Remove="AgDatabaseMove.Unit\**" />
+    <None Remove="AgDatabaseMove.Cli\**" />
+    <None Remove="AgDatabaseMove.Integration\**" />
+    <None Remove="AgDatabaseMove.Unit\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.Smo" Version="150.18040.0-xplat" />
+    <PackageReference Include="Microsoft.SqlServer.SmoExtended" Version="150.18040.0-xplat" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Data.DataSetExtensions">
+      <HintPath>..\..\..\..\.nuget\packages\system.data.datasetextensions\4.5.0\ref\netstandard2.0\System.Data.DataSetExtensions.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
