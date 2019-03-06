@@ -27,14 +27,13 @@ jobs:
     - powershell: dotnet pack src/AgDatabaseMove.csproj -o $(Build.ArtifactStagingDirectory) -c $(buildConfiguration)
       condition: eq(variables['buildConfiguration'], 'Release')
       displayName: 'dotnet pack'
-    - task: NuGetCommand@2
+    - task: DotNetCoreCLI@2
       displayName: 'NuGet push'
       condition: and(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['buildConfiguration'], 'Release'))
       inputs:
-        command: push
-        nuGetFeedType: external
+        command: 'push'
+        nuGetFeedType: 'external'
         feedsToUse: 'FactSet Nuget'
-        allowPackageConflicts: true
         versioningScheme: byEnvVar
         versionEnvVar: Build.SourceBranch
 
