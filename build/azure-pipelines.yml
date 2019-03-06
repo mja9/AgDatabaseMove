@@ -1,7 +1,12 @@
 trigger:
+  branches:
+    exclude:
+    - '*'
   tags:
-    include:
+    include: 
     - v*
+  pr:
+  - 'master'
 
 jobs:
   - job: Build
@@ -15,27 +20,38 @@ jobs:
           buildConfiguration: Debug
 
     steps:
-    - powershell: dotnet build --configuration $(buildConfiguration)
-      displayName: Build
-    - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
-      displayName: Test
-    - task: PublishTestResults@2
-      condition: succeededOrFailed()
+    - task: DotNetCoreCLI@2
       inputs:
-        testRunner: xUnit
-        testResultsFiles: '**/*.trx'
-    - powershell: dotnet pack src/AgDatabaseMove.csproj -o $(Build.ArtifactStagingDirectory) -c $(buildConfiguration)
+        command: 'restore'
+      displayName: Restore
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        configuration: $(buildConfiguration)
+      displayName: Build
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'test'
+        projects: tests/AgDatabaseMove.Unit
+        nobuild: true
+        configuration: $(buildConfiguration)
+      displayName: Test
+    - task: DotNetCoreCLI@2
       condition: eq(variables['buildConfiguration'], 'Release')
       displayName: 'dotnet pack'
+      inputs:
+        command: 'pack'
+        configuration: $(buildConfiguration)
+        packagesToPack: src/AgDatabaseMove.csproj
+        versioningScheme: byEnvVar
+        versionEnvVar: Build.SourceBranch
     - task: DotNetCoreCLI@2
       displayName: 'NuGet push'
       condition: and(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['buildConfiguration'], 'Release'))
       inputs:
         command: 'push'
         nuGetFeedType: 'external'
-        feedsToUse: 'FactSet Nuget'
-        versioningScheme: byEnvVar
-        versionEnvVar: Build.SourceBranch
+        feedsToUse: 'FactSet Nuget'        
 
   - job: CodeCleanup
     pool:
