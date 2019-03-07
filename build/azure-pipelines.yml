@@ -36,18 +36,19 @@ jobs:
         nobuild: true
         configuration: $(buildConfiguration)
       displayName: Test
+    - powershell: $env:VersionNumber = "$(Build.SourceBranch)"  -replace "refs/tags/v", ""
     - task: DotNetCoreCLI@2
-      condition: eq(variables['buildConfiguration'], 'Release')
+      condition: ne(variables['VersionNumber'], '')
       displayName: 'dotnet pack'
       inputs:
         command: 'pack'
         configuration: $(buildConfiguration)
         packagesToPack: src/AgDatabaseMove.csproj
         versioningScheme: byEnvVar
-        versionEnvVar: Build.SourceBranch
+        versionEnvVar: VersionNumber
     - task: DotNetCoreCLI@2
       displayName: 'NuGet push'
-      condition: and(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['buildConfiguration'], 'Release'))
+      condition: and(ne(variables['VersionNumber'], ''), eq(variables['buildConfiguration'], 'Release'))
       inputs:
         command: 'push'
         nuGetFeedType: 'external'
