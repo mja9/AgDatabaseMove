@@ -53,7 +53,7 @@ jobs:
       inputs:
         command: 'push'
         nuGetFeedType: 'external'
-        feedsToUse: 'FactSet Nuget'        
+        publishFeedCredentials: 'FactSet Nuget'        
 
   - job: CodeCleanup
     pool:
