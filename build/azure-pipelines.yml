@@ -47,13 +47,13 @@ jobs:
         packagesToPack: src/AgDatabaseMove.csproj
         versioningScheme: byEnvVar
         versionEnvVar: VersionNumber
-    - task: DotNetCoreCLI@2
+    - task: NuGetCommand@2
       displayName: 'NuGet push'
       condition: and(ne(variables['VersionNumber'], ''), eq(variables['BuildConfiguration'], 'Release'))
       inputs:
         command: 'push'
         nuGetFeedType: 'external'
-        publishFeedCredentials: 'FactSet Nuget'        
+        publishFeedCredentials: 'FactSet Nuget'
 
   - job: CodeCleanup
     pool:
