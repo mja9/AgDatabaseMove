@@ -1,7 +1,12 @@
 trigger:
+  branches:
+    exclude:
+    - '*'
   tags:
-    include:
+    include: 
     - v*
+pr:
+- 'master'
 
 jobs:
   - job: Build
@@ -10,33 +15,49 @@ jobs:
     strategy:
       matrix:
         Release:
-          buildConfiguration: Release
+          BuildConfiguration: Release
         Debug:
-          buildConfiguration: Debug
+          BuildConfiguration: Debug
 
     steps:
-    - powershell: dotnet build --configuration $(buildConfiguration)
-      displayName: Build
-    - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
-      displayName: Test
-    - task: PublishTestResults@2
-      condition: succeededOrFailed()
+    - task: DotNetCoreCLI@2
       inputs:
-        testRunner: xUnit
-        testResultsFiles: '**/*.trx'
-    - powershell: dotnet pack src/AgDatabaseMove.csproj -o $(Build.ArtifactStagingDirectory) -c $(buildConfiguration)
-      condition: eq(variables['buildConfiguration'], 'Release')
+        command: 'restore'
+      displayName: Restore
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: "-c $(BuildConfiguration)"
+      displayName: Build
+    # Using this task publishes the test results to Azure Pipelines
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'test'
+        arguments: "-c $(BuildConfiguration)"
+        projects: tests/AgDatabaseMove.Unit
+        nobuild: true
+      displayName: Test
+    - powershell: |
+        ("$(Build.SourceBranch)" -match "(refs/tags/v)(.*)") -and ($env:VersionNumber = $Matches[2])
+        Write-Host "##vso[task.setvariable variable=VersionNumber]$env:VersionNumber"
+      displayName: 'Extract version from git tag'
+    # Nuget pack does not work with dotnet standard packages
+    - task: DotNetCoreCLI@2
+      condition: ne(variables['VersionNumber'], '')
       displayName: 'dotnet pack'
+      inputs:
+        command: 'pack'
+        packagesToPack: src/AgDatabaseMove.csproj
+        versioningScheme: byEnvVar
+        versionEnvVar: VersionNumber
+    # DotNet push doesn't work with encrypted api keys
     - task: NuGetCommand@2
       displayName: 'NuGet push'
-      condition: and(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['buildConfiguration'], 'Release'))
+      condition: and(ne(variables['VersionNumber'], ''), eq(variables['BuildConfiguration'], 'Release'))
       inputs:
-        command: push
-        nuGetFeedType: external
-        feedsToUse: 'FactSet Nuget'
-        allowPackageConflicts: true
-        versioningScheme: byEnvVar
-        versionEnvVar: Build.SourceBranch
+        command: 'push'
+        nuGetFeedType: 'external'
+        publishFeedCredentials: 'FactSet Nuget'
 
   - job: CodeCleanup
     pool:
