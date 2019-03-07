@@ -36,7 +36,9 @@ jobs:
         nobuild: true
         configuration: $(buildConfiguration)
       displayName: Test
-    - powershell: $env:VersionNumber = "$(Build.SourceBranch)"  -replace "refs/tags/v", ""
+    - powershell: |
+        $env:VersionNumber = "$(Build.SourceBranch)"  -replace "refs/tags/v", ""
+        Write-Host "##vso[task.setvariable variable=VersionNumber]$env:VersionNumber"
     - task: DotNetCoreCLI@2
       condition: ne(variables['VersionNumber'], '')
       displayName: 'dotnet pack'
