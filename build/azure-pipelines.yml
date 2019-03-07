@@ -15,9 +15,9 @@ jobs:
     strategy:
       matrix:
         Release:
-          buildConfiguration: Release
+          BuildConfiguration: Release
         Debug:
-          buildConfiguration: Debug
+          BuildConfiguration: Debug
 
     steps:
     - task: DotNetCoreCLI@2
@@ -27,14 +27,14 @@ jobs:
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
-        configuration: $(buildConfiguration)
+        arguments: "-c $(BuildConfiguration)"
       displayName: Build
     - task: DotNetCoreCLI@2
       inputs:
         command: 'test'
+        arguments: "-c $(BuildConfiguration)"
         projects: tests/AgDatabaseMove.Unit
         nobuild: true
-        configuration: $(buildConfiguration)
       displayName: Test
     - powershell: |
         $env:VersionNumber = "$(Build.SourceBranch)"  -replace "refs/tags/v", ""
@@ -44,13 +44,12 @@ jobs:
       displayName: 'dotnet pack'
       inputs:
         command: 'pack'
-        configuration: $(buildConfiguration)
         packagesToPack: src/AgDatabaseMove.csproj
         versioningScheme: byEnvVar
         versionEnvVar: VersionNumber
     - task: DotNetCoreCLI@2
       displayName: 'NuGet push'
-      condition: and(ne(variables['VersionNumber'], ''), eq(variables['buildConfiguration'], 'Release'))
+      condition: and(ne(variables['VersionNumber'], ''), eq(variables['BuildConfiguration'], 'Release'))
       inputs:
         command: 'push'
         nuGetFeedType: 'external'
