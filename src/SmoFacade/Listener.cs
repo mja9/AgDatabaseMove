@@ -54,7 +54,7 @@
       var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
       connectionStringBuilder.InitialCatalog = "master";
       if(connectionStringBuilder.DataSource == null)
-        throw new Exception("DataSource not supplied in connection string.");
+        throw new ArgumentException("DataSource not supplied in connection string.");
       using(var server = new Server(connectionStringBuilder.ToString())) {
         // Find the AG associated with the listener
         var availabilityGroup =
