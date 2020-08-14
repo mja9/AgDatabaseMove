@@ -26,8 +26,7 @@ namespace AgDatabaseMove.Integration
 
     public TestRestoreFixture()
     {
-      var builder = new ConfigurationBuilder()
-        .AddJsonFile("config.json", false);
+      var builder = new ConfigurationBuilder().AddJsonFile("config.json", false);
 
       _config = builder.Build().GetSection("TestRestore").Get<TestRestoreConfig>();
 
@@ -53,8 +52,7 @@ namespace AgDatabaseMove.Integration
     {
       var postTestLogins = server.Logins.ToList();
       var newLogins = postTestLogins.Where(post => _preTestLogins.All(pre => pre.Name != post.Name));
-      foreach(var login in newLogins)
-        login.Drop();
+      foreach(var login in newLogins) login.Drop();
     }
   }
 
@@ -83,12 +81,20 @@ namespace AgDatabaseMove.Integration
     [Fact]
     public void DetectsInitializing()
     {
-      // Restore databases across AG instances
+      // AgDatabaseMove databases across AG instances
       Assert.False(Test.Exists());
-      var restore = new Restore(Source, Test) { Finalize = false, FileRelocator = RestoreFileRelocator };
-      restore.AgDbRestore();
 
-      // Restore with recovery primary
+      var mover = new AgDatabaseMove(new MoveOptions {
+        Source = Source,
+        Destination = Test,
+        Overwrite = false,
+        Finalize = false,
+        FileRelocator = RestoreFileRelocator
+      });
+
+      mover.Move();
+
+      // AgDatabaseMove with recovery primary
       Test.FinalizePrimary();
 
       // Write sufficient data to the primary
@@ -123,16 +129,22 @@ namespace AgDatabaseMove.Integration
     [Fact]
     public void ProgressiveRestore()
     {
-      var restore = new Restore(Source, Test) { FileRelocator = RestoreFileRelocator };
+      var mover = new AgDatabaseMove(new MoveOptions {
+        Source = Source,
+        Destination = Test,
+        Overwrite = false,
+        Finalize = false,
+        FileRelocator = RestoreFileRelocator
+      });
+
       int seconds;
       decimal? lastLsn = null;
 
-      // Restore the database and subsequent log files 
+      // AgDatabaseMove the database and subsequent log files 
       do {
         var timer = new Stopwatch();
         timer.Start();
-        Source.LogBackup();
-        lastLsn = restore.AgDbRestore(lastLsn);
+        lastLsn = mover.Move(lastLsn);
         timer.Stop();
         seconds = timer.Elapsed.Seconds;
       } while(seconds > 5);
@@ -140,12 +152,11 @@ namespace AgDatabaseMove.Integration
       // Do things here to disconnect users: Set single user mode, signal the service etc.
       Source.RestrictedUserMode();
 
-      // Hopefully a quick backup and restore.
-      Source.LogBackup();
-      restore.Finalize = true;
-      restore.AgDbRestore(lastLsn);
-      // The database is migrated
+      // Hopefully a quick backup and restore
+      mover._options.Finalize = true;
+      mover.Move(lastLsn);
 
+      // The database is migrated
       Source.MultiUserMode();
       Test.Delete();
     }
@@ -154,10 +165,18 @@ namespace AgDatabaseMove.Integration
     public void RestoreAndCleanup()
     {
       Assert.False(Test.Exists());
-      var restore = new Restore(Source, Test)
-        { Finalize = true, CopyLogins = true, FileRelocator = RestoreFileRelocator };
-      restore.AgDbRestore();
+
+      var mover = new AgDatabaseMove(new MoveOptions {
+        Source = Source,
+        Destination = Test,
+        Finalize = true,
+        CopyLogins = true,
+        FileRelocator = RestoreFileRelocator
+      });
+
+      mover.Move();
       Assert.True(Test.Exists());
+
       Test.Delete();
       Assert.False(Test.Exists());
     }

@@ -1,8 +1,7 @@
-﻿namespace AgDatabaseMove
+namespace AgDatabaseMove
 {
   using System;
   using System.Collections.Generic;
-  using System.Data.SqlClient;
 
 
   /// <summary>
@@ -14,9 +13,7 @@
   {
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
-      return x.LastLsn == y.LastLsn &&
-             x.FirstLsn == y.FirstLsn &&
-             x.BackupType == y.BackupType &&
+      return x.LastLsn == y.LastLsn && x.FirstLsn == y.FirstLsn && x.BackupType == y.BackupType &&
              x.DatabaseName == y.DatabaseName;
     }
 
@@ -36,21 +33,6 @@
   /// </summary>
   public class BackupMetadata
   {
-    public BackupMetadata() { }
-
-    internal BackupMetadata(SqlDataReader dataReader)
-    {
-      CheckpointLsn = (decimal)dataReader["checkpoint_lsn"];
-      DatabaseBackupLsn = (decimal)dataReader["database_backup_lsn"];
-      DatabaseName = (string)dataReader["database_name"];
-      FirstLsn = (decimal)dataReader["first_lsn"];
-      LastLsn = (decimal)dataReader["last_lsn"];
-      PhysicalDeviceName = (string)dataReader["physical_device_name"];
-      ServerName = (string)dataReader["server_name"];
-      StartTime = (DateTime)dataReader["backup_start_date"];
-      BackupType = (string)dataReader["backup_type"];
-    }
-
     public decimal CheckpointLsn { get; set; }
     public decimal DatabaseBackupLsn { get; set; }
     public string DatabaseName { get; set; }

@@ -1,12 +1,13 @@
-﻿namespace AgDatabaseMove.Integration
+namespace AgDatabaseMove.Integration
 {
   using System;
   using System.Linq;
-  using System.Security.Cryptography;
   using Fixtures;
+  using Microsoft.SqlServer.Management.Smo;
   using SmoFacade;
   using Xunit;
-  using Smo = Microsoft.SqlServer.Management.Smo;
+  using Login = SmoFacade.Login;
+  using Server = SmoFacade.Server;
 
 
   public class TestLogin : IClassFixture<TestLoginFixture>
@@ -59,7 +60,7 @@
           { 0xEA, 0x11, 0x6E, 0x4D, 0x2A, 0x9E, 0x43, 0x4B, 0x84, 0x04, 0xB9, 0x93, 0xF4, 0x8F, 0x1E, 0xA5 },
         Name = LoginName,
         Password = Password,
-        LoginType = Smo.LoginType.SqlLogin,
+        LoginType = LoginType.SqlLogin,
         DefaultDatabase = DefaultDatabase
       };
 
