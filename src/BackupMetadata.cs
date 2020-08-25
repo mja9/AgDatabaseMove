@@ -2,6 +2,7 @@ namespace AgDatabaseMove
 {
   using System;
   using System.Collections.Generic;
+  using SmoFacade;
 
 
   /// <summary>
@@ -13,7 +14,9 @@ namespace AgDatabaseMove
   {
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
-      return x.LastLsn == y.LastLsn && x.FirstLsn == y.FirstLsn && x.BackupType == y.BackupType &&
+      return x.LastLsn == y.LastLsn &&
+             x.FirstLsn == y.FirstLsn &&
+             x.BackupType == y.BackupType &&
              x.DatabaseName == y.DatabaseName;
     }
 
@@ -21,7 +24,8 @@ namespace AgDatabaseMove
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
-      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.BackupType);
+      hashCode = hashCode * -1521134295 +
+                 EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
       return hashCode;
@@ -47,6 +51,6 @@ namespace AgDatabaseMove
     ///   D = Database, I = Differential database, L = Log
     ///   https://docs.microsoft.com/en-us/sql/relational-databases/system-tables/backupset-transact-sql?view=sql-server-2017
     /// </summary>
-    public string BackupType { get; set; }
+    public BackupFileTools.BackupType BackupType { get; set; }
   }
 }
