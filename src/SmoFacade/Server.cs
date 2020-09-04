@@ -87,9 +87,7 @@ namespace AgDatabaseMove.SmoFacade
       // The database collection is cached and not invalidated on database creation (with a second server object).
       _server.Databases.Refresh();
       var database = _server.Databases[dbName];
-      if(database != null)
-        return new Database(_server.Databases[dbName], this);
-      return null;
+      return database == null ? null : new Database(database, this);
     }
 
     /// <summary>
@@ -101,8 +99,7 @@ namespace AgDatabaseMove.SmoFacade
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
       Func<string, string> fileRelocation = null)
     {
-      var restore = new Restore();
-
+      var restore = new Restore { Database = databaseName, NoRecovery = true };
 
       foreach(var backup in backupOrder) {
         var device = BackupFileTools.IsUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
@@ -129,8 +126,6 @@ namespace AgDatabaseMove.SmoFacade
           }
         }
 
-        restore.Database = databaseName;
-        restore.NoRecovery = true;
         restore.SqlRestore(_server);
         restore.Devices.Remove(backupDeviceItem);
       }

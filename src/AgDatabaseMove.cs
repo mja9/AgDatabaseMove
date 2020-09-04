@@ -12,17 +12,7 @@ namespace AgDatabaseMove
   using SmoFacade;
 
 
-  public interface IMoveOptions
-  {
-    IAgDatabase Source { get; set; }
-    IAgDatabase Destination { get; set; }
-    bool Overwrite { get; set; }
-    bool Finalize { get; set; }
-    bool CopyLogins { get; set; }
-    Func<string, string> FileRelocator { get; set; }
-  }
-
-  public class MoveOptions : IMoveOptions
+  public class MoveOptions
   {
     public IAgDatabase Source { get; set; }
     public IAgDatabase Destination { get; set; }
@@ -37,9 +27,9 @@ namespace AgDatabaseMove
   /// </summary>
   public class AgDatabaseMove
   {
-    internal readonly IMoveOptions _options;
+    internal readonly MoveOptions _options;
 
-    public AgDatabaseMove(IMoveOptions options)
+    public AgDatabaseMove(MoveOptions options)
     {
       _options = options;
     }
@@ -64,12 +54,14 @@ namespace AgDatabaseMove
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
         throw new ArgumentException("Database exists and overwrite option is not set");
 
-      if(lastLsn != null && !_options.Destination.Restoring)
+      if(lastLsn == null && _options.Destination.Restoring)
         throw new
           ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
 
       if(_options.Overwrite)
         _options.Destination.Delete();
+
+      // TODO: consider making Source DB Single User Mode??
 
       _options.Source.LogBackup();
 
@@ -84,15 +76,15 @@ namespace AgDatabaseMove
 
       _options.Destination.Restore(backupList, _options.FileRelocator);
 
-      if(_options.Finalize)
-        _options.Destination.JoinAg();
-
       if(_options.CopyLogins)
         _options.Destination.CopyLogins(_options.Source.AssociatedLogins().Select(UpdateDefaultDb).ToList());
 
-      var backupLastLsn = backupList.Max(bl => bl.LastLsn);
+      if(_options.Finalize)
+        _options.Destination.JoinAg();
+
       _options.Source.Delete();
-      return backupLastLsn;
+
+      return backupList.Max(bl => bl.LastLsn);
     }
   }
 }
