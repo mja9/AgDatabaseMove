@@ -50,7 +50,7 @@ namespace AgDatabaseMove.SmoFacade
      * connection to find those server names though is done through the listener and that instance is thrown away in this
      * constructor so it won't be used again.
      */
-    public Listener(SqlConnectionStringBuilder connectionStringBuilder, string credentailName = null)
+    public Listener(SqlConnectionStringBuilder connectionStringBuilder, string credentialName = null)
     {
       if(connectionStringBuilder.DataSource == null)
         throw new ArgumentException("DataSource not supplied in connection string");
@@ -69,12 +69,14 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentailName);
+      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentialName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
-        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName, credentailName));
+        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
+                                                secondaryName,
+                                                credentialName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
@@ -129,10 +131,18 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
-      string credentailName)
+      string credentialName)
     {
-      connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
-      return new Server(connBuilder.ToString(), credentailName);
+      var parts = agInstanceName.Split('\\');
+      if(parts.Length == 1)
+        connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
+      if(parts.Length == 2)
+        // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
+        connBuilder.DataSource = $"{Dns.GetHostEntry(parts[0]).HostName}\\{parts[1]}";
+      else
+        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
+
+      return new Server(connBuilder.ToString(), credentialName);
     }
   }
 }
