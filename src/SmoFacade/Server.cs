@@ -51,6 +51,11 @@ namespace AgDatabaseMove.SmoFacade
       SqlConnection?.Dispose();
     }
 
+    public void DropLogin(LoginProperties login)
+    {
+      _server.Logins[login.Name].DropIfExists();
+    }
+
     /// <summary>
     ///   Parses the AG name from the connection's DataSource.
     /// </summary>
