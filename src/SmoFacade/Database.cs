@@ -43,7 +43,7 @@ namespace AgDatabaseMove.SmoFacade
       var policy = Policy
         .Handle<FailedOperationException>()
         .Or<TimeoutException>()
-        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
+        .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policy.Execute(() => {
