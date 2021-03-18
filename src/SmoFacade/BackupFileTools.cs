@@ -1,6 +1,8 @@
 ﻿namespace AgDatabaseMove.SmoFacade
 {
   using System;
+  using System.IO;
+  using System.Linq;
   using System.Text.RegularExpressions;
 
 
@@ -45,5 +47,23 @@
           throw new ArgumentException("Invalid backup type");
       }
     }
+
+    public static bool IsValidPath(string path)
+    {
+      // A quick check before leaning on exceptions
+      if(Path.GetInvalidPathChars().Any(path.Contains))
+        return false;
+
+      try {
+        // This will throw an argument exception if the path is invalid
+        Path.GetFullPath(path);
+        // A relative path won't help us much if the destination is another server. It needs to be rooted.
+        return Path.IsPathRooted(path) || path.StartsWith(@"\\");
+      }
+      catch(Exception) {
+        return false;
+      }
+    }
+
   }
 }

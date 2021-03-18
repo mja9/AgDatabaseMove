@@ -58,5 +58,33 @@ namespace AgDatabaseMove.Unit
     {
       Assert.Equal(type, BackupFileTools.BackupTypeAbbrevToType(abbrev));
     }
+
+    [Theory]
+    [InlineData(@"C:\dir\file.ext")]
+    [InlineData(@"C:\dir\")]
+    [InlineData(@"C:\dir")]
+    [InlineData(@"C:\")]
+    [InlineData(@"\\unc\share\dir\file.ext")]
+    [InlineData(@"\\unc\share")]
+    [InlineData(@"/some/file")]
+    [InlineData(@"/dir")]
+    [InlineData(@"/")]
+    public void ValidPathTests(string path)
+    {
+      Assert.True(BackupFileTools.IsValidPath(path));
+    }
+
+    [Theory]
+    [InlineData(@"")]
+    [InlineData(@" ")]
+    [InlineData(@"file.ext")]
+    [InlineData(@"dir\file.ext")]
+    [InlineData(@"C dir\file.ext")]
+    [InlineData(@"dir")]
+    [InlineData(@"C:\inval|d")]
+    public void InValidPathTests(string path)
+    {
+      Assert.False(BackupFileTools.IsValidPath(path));
+    }
   }
 }
