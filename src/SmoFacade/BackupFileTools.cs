@@ -51,8 +51,7 @@
     public static bool IsValidPath(string path)
     {
       // A quick check before leaning on exceptions
-      if (Path.GetInvalidPathChars().Any(path.Contains))
-      {
+      if(Path.GetInvalidPathChars().Any(path.Contains)) {
         return false;
       }
 
