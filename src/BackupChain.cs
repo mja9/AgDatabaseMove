@@ -98,7 +98,8 @@ namespace AgDatabaseMove
 
     private static bool IsValidFilePath(BackupMetadata meta)
     {
-      return BackupFileTools.IsUrl(meta.PhysicalDeviceName) || BackupFileTools.IsValidPath(meta.PhysicalDeviceName);
+      var path = meta.PhysicalDeviceName;
+      return BackupFileTools.IsUrl(path) || BackupFileTools.IsUnc(path) || BackupFileTools.IsValidPath(path);
     }
   }
 }

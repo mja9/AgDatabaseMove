@@ -51,19 +51,31 @@
     public static bool IsValidPath(string path)
     {
       // A quick check before leaning on exceptions
-      if(Path.GetInvalidPathChars().Any(path.Contains))
+      if (Path.GetInvalidPathChars().Any(path.Contains))
+      {
         return false;
+      }
 
-      try {
+      try { 
         // This will throw an argument exception if the path is invalid
         Path.GetFullPath(path);
         // A relative path won't help us much if the destination is another server. It needs to be rooted.
-        return Path.IsPathRooted(path) || path.StartsWith(@"\\");
+        return Path.IsPathRooted(path);
       }
       catch(Exception) {
         return false;
       }
     }
 
+    public static bool IsUnc(string path)
+    {
+      try {
+        var uri = new Uri(path);
+        return uri.IsUnc;
+      }
+      catch {
+        return false;
+      }
+    }
   }
 }

@@ -64,8 +64,6 @@ namespace AgDatabaseMove.Unit
     [InlineData(@"C:\dir\")]
     [InlineData(@"C:\dir")]
     [InlineData(@"C:\")]
-    [InlineData(@"\\unc\share\dir\file.ext")]
-    [InlineData(@"\\unc\share")]
     [InlineData(@"/some/file")]
     [InlineData(@"/dir")]
     [InlineData(@"/")]
@@ -85,6 +83,25 @@ namespace AgDatabaseMove.Unit
     public void InValidPathTests(string path)
     {
       Assert.False(BackupFileTools.IsValidPath(path));
+    }
+
+    [Theory]
+    [InlineData(@"\\server\file")]
+    [InlineData(@"\\server\path\file")]
+    [InlineData(@"\\server\path\file.ext")]
+    [InlineData(@"//Unix/syntax/file.ext")]
+    public void ValidUncTests(string path)
+    {
+      Assert.True(BackupFileTools.IsUnc(path));
+    }
+
+    [Theory]
+    [InlineData(@"\\C:/")]
+    [InlineData(@"\server\")]
+    [InlineData(@"/server/")]
+    public void InvalidUncTests(string path)
+    {
+      Assert.False(BackupFileTools.IsUnc(path));
     }
   }
 }
