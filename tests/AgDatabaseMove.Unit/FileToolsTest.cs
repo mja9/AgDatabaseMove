@@ -17,10 +17,10 @@ namespace AgDatabaseMove.Unit
     [InlineData(@"https://storage-account.blob.core.windows.net/container/file.bad")]
     [InlineData(@"https://storage-account.blob.core.windows.net/container/sql/db_name/backup_2020_09_02_170003_697.trn")]
     [InlineData(@"http://a.bak")]
-    // works for UNC urls too
-    [InlineData(@"\\server\file")]
-    [InlineData(@"\\server\path\file")]
+    [InlineData(@"\\UNC\syntax\path\file")]
     [InlineData(@"\\server\path\file.ext")]
+    [InlineData(@"\\server\file")]
+    [InlineData(@"\\server\file.ext")]
     [InlineData(@"//Unix/syntax/file.ext")]
     public void ValidUrlTests(string url)
     {
@@ -28,13 +28,11 @@ namespace AgDatabaseMove.Unit
     }
 
     [Theory]
-    // can't be to a dir
-    [InlineData(@"https://storage-account.blob.core.windows.net/container/")]
-    [InlineData(@"http://storage-account.blob.core.windows.net/container/")]
-    [InlineData(@"C:/hello/a.bak")]
     [InlineData(@"\\C:/")]
-    [InlineData(@"\server\file.txt")]
-    [InlineData(@"/server/file.txt")]
+    [InlineData(@"\wrongUNC\file.txt")]
+    [InlineData(@"/wrongUNC/file.txt")]
+    [InlineData(@"https://storage-account.blob.core.windows.net/dir/")]
+    [InlineData(@"http://storage-account.blob.core.windows.net/dir/")]
     public void InvalidUrlTests(string url)
     {
       Assert.False(BackupFileTools.IsUrl(url));
