@@ -17,7 +17,9 @@
 
     public static bool IsUrl(string path)
     {
-      return Regex.IsMatch(path, @"(http(|s):\/)(\/[^\s]+)+\.([a-zA-Z]+)$");
+      return Uri.TryCreate(path, UriKind.Absolute, out var uriResult)
+             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.IsUnc)
+             && !(path.EndsWith(@"/") || path.EndsWith(@"\"));
     }
 
     public static string BackupTypeToExtension(BackupType type)
@@ -62,17 +64,6 @@
         return Path.IsPathRooted(path);
       }
       catch(Exception) {
-        return false;
-      }
-    }
-
-    public static bool IsUnc(string path)
-    {
-      try {
-        var uri = new Uri(path);
-        return uri.IsUnc;
-      }
-      catch {
         return false;
       }
     }
