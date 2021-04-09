@@ -17,25 +17,29 @@ namespace AgDatabaseMove.Unit
     [InlineData(@"https://storage-account.blob.core.windows.net/container/file.bad")]
     [InlineData(@"https://storage-account.blob.core.windows.net/container/sql/db_name/backup_2020_09_02_170003_697.trn")]
     [InlineData(@"http://a.bak")]
-    [InlineData(@"\\UNC\syntax\path\file")]
-    [InlineData(@"\\server\path\file.ext")]
-    [InlineData(@"\\server\file")]
+    [InlineData(@"\\UNC\syntax\path\file.ext")]
     [InlineData(@"\\server\file.ext")]
     [InlineData(@"//Unix/syntax/file.ext")]
     public void ValidUrlTests(string url)
     {
-      Assert.True(BackupFileTools.IsUrl(url));
+      Assert.True(BackupFileTools.IsValidFileUrl(url));
     }
 
     [Theory]
+    [InlineData(@"")]
+    [InlineData(@" ")]
+    [InlineData(@"c:\hello\a.bak")]
     [InlineData(@"\\C:/")]
     [InlineData(@"\wrongUNC\file.txt")]
     [InlineData(@"/wrongUNC/file.txt")]
-    [InlineData(@"https://storage-account.blob.core.windows.net/dir/")]
+    [InlineData(@"\\server\dir")]
+    [InlineData(@"\\server\dir\")]
+    [InlineData(@"https://storage-account.blob.core.windows.net/dir")]
+    [InlineData(@"http://storage-account.blob.core.windows.net/dir")]
     [InlineData(@"http://storage-account.blob.core.windows.net/dir/")]
     public void InvalidUrlTests(string url)
     {
-      Assert.False(BackupFileTools.IsUrl(url));
+      Assert.False(BackupFileTools.IsValidFileUrl(url));
     }
 
     [Theory]
@@ -58,28 +62,29 @@ namespace AgDatabaseMove.Unit
 
     [Theory]
     [InlineData(@"C:\dir\file.ext")]
-    [InlineData(@"C:\dir\")]
-    [InlineData(@"C:\dir")]
-    [InlineData(@"C:\")]
-    [InlineData(@"/some/file")]
-    [InlineData(@"/dir")]
-    [InlineData(@"/")]
+    [InlineData(@"/some/file.ext")]
+    
     public void ValidPathTests(string path)
     {
-      Assert.True(BackupFileTools.IsValidPath(path));
+      Assert.True(BackupFileTools.IsValidFilePath(path));
     }
 
     [Theory]
     [InlineData(@"")]
     [InlineData(@" ")]
+    [InlineData(@"/dir")]
+    [InlineData(@"/")]
     [InlineData(@"file.ext")]
     [InlineData(@"dir\file.ext")]
     [InlineData(@"C dir\file.ext")]
     [InlineData(@"dir")]
+    [InlineData(@"C:\dir\")]
+    [InlineData(@"C:\dir")]
+    [InlineData(@"C:\")]
     [InlineData(@"C:\inval|d")]
     public void InValidPathTests(string path)
     {
-      Assert.False(BackupFileTools.IsValidPath(path));
+      Assert.False(BackupFileTools.IsValidFilePath(path));
     }
   }
 }

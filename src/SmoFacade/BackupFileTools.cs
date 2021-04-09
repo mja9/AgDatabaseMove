@@ -15,11 +15,11 @@
       Log // trn  / L
     }
 
-    public static bool IsUrl(string path)
+    public static bool IsValidFileUrl(string path)
     {
       return Uri.TryCreate(path, UriKind.Absolute, out var uriResult)
              && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.IsUnc)
-             && !(path.EndsWith(@"/") || path.EndsWith(@"\"));
+             && Path.HasExtension(path);
     }
 
     public static string BackupTypeToExtension(BackupType type)
@@ -50,7 +50,7 @@
       }
     }
 
-    public static bool IsValidPath(string path)
+    public static bool IsValidFilePath(string path)
     {
       // A quick check before leaning on exceptions
       if(Path.GetInvalidPathChars().Any(path.Contains)) {
@@ -61,7 +61,7 @@
         // This will throw an argument exception if the path is invalid
         Path.GetFullPath(path);
         // A relative path won't help us much if the destination is another server. It needs to be rooted.
-        return Path.IsPathRooted(path);
+        return Path.IsPathRooted(path) && Path.HasExtension(path);
       }
       catch(Exception) {
         return false;
