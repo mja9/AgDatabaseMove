@@ -1,6 +1,8 @@
 ﻿namespace AgDatabaseMove.SmoFacade
 {
   using System;
+  using System.IO;
+  using System.Linq;
   using System.Text.RegularExpressions;
 
 
@@ -13,9 +15,11 @@
       Log // trn  / L
     }
 
-    public static bool IsUrl(string path)
+    public static bool IsValidFileUrl(string path)
     {
-      return Regex.IsMatch(path, @"(http(|s):\/)(\/[^\s]+)+\.([a-zA-Z]+)$");
+      return Uri.TryCreate(path, UriKind.Absolute, out var uriResult)
+             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.IsUnc)
+             && Path.HasExtension(path);
     }
 
     public static string BackupTypeToExtension(BackupType type)
@@ -43,6 +47,24 @@
           return BackupType.Log;
         default:
           throw new ArgumentException("Invalid backup type");
+      }
+    }
+
+    public static bool IsValidFilePath(string path)
+    {
+      // A quick check before leaning on exceptions
+      if(Path.GetInvalidPathChars().Any(path.Contains)) {
+        return false;
+      }
+
+      try { 
+        // This will throw an argument exception if the path is invalid
+        Path.GetFullPath(path);
+        // A relative path won't help us much if the destination is another server. It needs to be rooted.
+        return Path.IsPathRooted(path) && Path.HasExtension(path);
+      }
+      catch(Exception) {
+        return false;
       }
     }
   }

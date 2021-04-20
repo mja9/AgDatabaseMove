@@ -132,7 +132,7 @@ namespace AgDatabaseMove.SmoFacade
       var restore = new Restore { Database = databaseName, NoRecovery = true };
 
       foreach(var backup in backupOrder) {
-        var device = BackupFileTools.IsUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
+        var device = BackupFileTools.IsValidFileUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
         var backupDeviceItem = new BackupDeviceItem(backup.PhysicalDeviceName, device);
         if(_credentialName != null && device == DeviceType.Url)
           backupDeviceItem.CredentialName = _credentialName;
@@ -207,7 +207,7 @@ namespace AgDatabaseMove.SmoFacade
       var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
       var filePath =
         $"{backupDirectory}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
-      var deviceType = BackupFileTools.IsUrl(filePath) ? DeviceType.Url : DeviceType.File;
+      var deviceType = BackupFileTools.IsValidFileUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
       if(_credentialName != null && deviceType == DeviceType.Url)

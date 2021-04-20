@@ -98,22 +98,8 @@ namespace AgDatabaseMove
 
     private static bool IsValidFilePath(BackupMetadata meta)
     {
-      if(BackupFileTools.IsUrl(meta.PhysicalDeviceName))
-        return true;
-
-      // A quick check before leaning on exceptions
-      if(Path.GetInvalidPathChars().Any(meta.PhysicalDeviceName.Contains))
-        return false;
-
-      try {
-        // This will throw an argument exception if the path is invalid
-        Path.GetFullPath(meta.PhysicalDeviceName);
-        // A relative path won't help us much if the destination is another server. It needs to be rooted.
-        return Path.IsPathRooted(meta.PhysicalDeviceName);
-      }
-      catch(Exception) {
-        return false;
-      }
+      var path = meta.PhysicalDeviceName;
+      return BackupFileTools.IsValidFileUrl(path) || BackupFileTools.IsValidFilePath(path);
     }
   }
 }
