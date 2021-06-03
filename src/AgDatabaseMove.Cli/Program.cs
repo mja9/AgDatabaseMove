@@ -15,6 +15,7 @@ namespace AgDatabaseMove.Cli
     public bool DeleteSource { get; set; } = false;
   }
 
+
   internal class Program
   {
     private static void Main(string[] args)
@@ -30,7 +31,7 @@ namespace AgDatabaseMove.Cli
         Overwrite = arguments.Overwrite,
         Finalize = arguments.Finalize,
         CopyLogins = arguments.CopyLogins,
-        DeleteSource = arguments.DeleteSource,
+        RetryDuration = attemptNumber => TimeSpan.FromSeconds(10 * attemptNumber),
         FileRelocator = filename =>
           RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
       });

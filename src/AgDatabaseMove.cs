@@ -17,9 +17,9 @@ namespace AgDatabaseMove
     public IAgDatabase Source { get; set; }
     public IAgDatabase Destination { get; set; }
     public bool Overwrite { get; set; }
-    public bool DeleteSource { get; set; } = true;
     public bool Finalize { get; set; }
     public bool CopyLogins { get; set; }
+    public Func<int, TimeSpan> RetryDuration { get; set; }
     public Func<string, string> FileRelocator { get; set; }
   }
 
@@ -44,6 +44,7 @@ namespace AgDatabaseMove
       return loginProperties;
     }
 
+
     /// <summary>
     ///   AgDatabaseMove the database to all instances of the availability group.
     ///   To join the AG, Finalize must be set.
@@ -55,12 +56,12 @@ namespace AgDatabaseMove
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
         throw new ArgumentException("Database exists and overwrite option is not set");
 
+      if(_options.Overwrite && lastLsn == null)
+        _options.Destination.Delete();
+
       if(lastLsn == null && _options.Destination.Restoring)
         throw new
           ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
-
-      if(_options.Overwrite)
-        _options.Destination.Delete();
 
       _options.Source.LogBackup();
 
@@ -73,16 +74,13 @@ namespace AgDatabaseMove
       if(!backupList.Any())
         throw new BackupChainException("No backups found to restore");
 
-      _options.Destination.Restore(backupList, _options.FileRelocator);
+      _options.Destination.Restore(backupList, _options.RetryDuration, _options.FileRelocator);
 
       if(_options.CopyLogins)
         _options.Destination.CopyLogins(_options.Source.AssociatedLogins().Select(UpdateDefaultDb).ToList());
 
       if(_options.Finalize)
         _options.Destination.JoinAg();
-
-      if(_options.DeleteSource)
-        _options.Source.Delete();
 
       return backupList.Max(bl => bl.LastLsn);
     }
