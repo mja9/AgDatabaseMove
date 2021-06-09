@@ -57,6 +57,37 @@ namespace AgDatabaseMove.SmoFacade
       _server.Logins[login.Name].DropIfExists();
     }
 
+    public decimal DatabaseSizeMb(string dbName)
+    {
+      var query = "SELECT total_size_mb = (SUM(size) * 8. / 1024) " +
+                  "FROM sys.master_files WITH(NOWAIT) " +
+                  "WHERE database_id = DB_ID(@db_name) " +
+                  "GROUP BY database_id";
+
+      using var cmd = SqlConnection.CreateCommand();
+      cmd.Parameters.Add(new SqlParameter("db_name", SqlDbType.VarChar) { Value = dbName });
+      cmd.CommandText = query;
+      using var reader = cmd.ExecuteReader();
+      reader.Read();
+      return (decimal)reader["total_size_mb"];
+    }
+
+    public int RemainingDiskMb()
+    {
+      // https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-master-files-transact-sql?view=sql-server-ver15
+      var query = "SELECT DISTINCT CONVERT(INT, dovs.available_bytes/1048576.0) AS free_size_mb" +
+                  "FROM sys.master_files mf" +
+                  "CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.FILE_ID) dovs" +
+                  "WHERE mf.type IN(0,1)" + // Rows and Logs
+                  "AND SUBSTRING(CONVERT(VARCHAR, SERVERPROPERTY('InstanceDefaultDataPath')), 1, 3) = dovs.volume_mount_point"; // Disk Drive equals
+
+      using var cmd = SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      using var reader = cmd.ExecuteReader();
+      reader.Read();
+      return (int)reader["free_size_mb"];
+    }
+
     /// <summary>
     ///   Parses the AG name from the connection's DataSource.
     /// </summary>
@@ -126,7 +157,10 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     /// <param name="backupOrder">An ordered list of backups to apply.</param>
     /// <param name="databaseName">Database to restore to.</param>
-    /// <param name="retryDurationProvider">Retry duration function. Retry 10 times, input retry number, output timespan to wait</param>
+    /// <param name="retryDurationProvider">
+    ///   Retry duration function. Retry 10 times, input retry number, output timespan to
+    ///   wait
+    /// </param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
       Func<int, TimeSpan> retryDurationProvider,
