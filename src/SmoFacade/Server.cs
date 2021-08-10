@@ -286,7 +286,6 @@ namespace AgDatabaseMove.SmoFacade
     {
       var connectionString = new SqlConnectionStringBuilder(SqlConnection.ConnectionString)
       {
-        // To fit within f.io connection timeout
         ConnectTimeout = connectionTimeout,
         InitialCatalog = dbName
       }.ToString();
