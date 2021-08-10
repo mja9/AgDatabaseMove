@@ -233,5 +233,10 @@ namespace AgDatabaseMove
     {
       _listener.Primary.Database(Name).MultiUserMode();
     }
+
+    public void CheckDBConnections(int connectionTimeout)
+    {
+      _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
+    }
   }
 }

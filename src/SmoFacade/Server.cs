@@ -281,5 +281,22 @@ namespace AgDatabaseMove.SmoFacade
 
       matchingLogin.AddRole(role.Name);
     }
+
+    public void CheckDBConnection(string dbName, int connectionTimeout)
+    {
+      var connectionString = new SqlConnectionStringBuilder(SqlConnection.ConnectionString)
+      {
+        // To fit within f.io connection timeout
+        ConnectTimeout = connectionTimeout,
+        InitialCatalog = dbName
+      }.ToString();
+
+      using var connection = new SqlConnection(connectionString);
+      connection.Open();
+      using var cmd = connection.CreateCommand();
+      cmd.CommandText = "SELECT 1";
+      using var reader = cmd.ExecuteReader();
+      reader.Read();
+    }
   }
 }
