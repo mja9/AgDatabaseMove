@@ -12,6 +12,7 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
+  using Exceptions;
   using Polly;
   using SmoFacade;
 
@@ -35,6 +36,7 @@ namespace AgDatabaseMove
     void DropAllLogins();
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
+    void ContainsLogin(string loginName);
   }
 
 
@@ -237,6 +239,44 @@ namespace AgDatabaseMove
     public void CheckDBConnections(int connectionTimeout)
     {
       _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
+    }
+    
+    private void CheckLoginExists(Server server, AvailabilityGroup availabilityGroup, string loginName)
+    {
+      var matchingLogins = server.Logins.Where(l => l.Name == loginName);
+      
+      if (matchingLogins.Count() == 0)
+        throw new MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+
+      if (matchingLogins.Count() > 1)
+        throw new
+          MultipleLoginException($"Multiple logins exist on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+
+      var sid = matchingLogins.First().Sid;
+      if (sid == null || sid.Length == 0)
+        throw new MissingSidException($"Sid missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+    }
+
+    public void ContainsLogin(string loginName)
+    {
+      var exceptions = new ConcurrentQueue<Exception>();
+
+      _listener.ForEachAgInstance((s, ag) => {
+        try {
+          CheckLoginExists(s, ag, loginName);
+        }
+        catch(MissingLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MultipleLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MissingSidException ex) {
+          exceptions.Enqueue(ex);
+        }
+      });
+
+      if(exceptions.Count > 0) throw new AggregateException(exceptions);
     }
   }
 }
