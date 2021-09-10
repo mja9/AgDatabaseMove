@@ -284,6 +284,8 @@ namespace AgDatabaseMove.SmoFacade
 
     public void CheckDBConnection(string dbName, int connectionTimeout)
     {
+      // Make sure to set `PersistSecurityInfo=True` in the connection string otherwise the password parameter might not be present
+      // https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlconnection.connectionstring?view=dotnet-plat-ext-5.0#remarks
       var connectionString = new SqlConnectionStringBuilder(SqlConnection.ConnectionString)
       {
         ConnectTimeout = connectionTimeout,
