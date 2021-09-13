@@ -19,10 +19,12 @@ namespace AgDatabaseMove.SmoFacade
   {
     internal readonly string _credentialName;
     internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
+    private readonly string _connectionString;
 
     public Server(string connectionString, string credentialName = null)
     {
-      SqlConnection = new SqlConnection(connectionString);
+      _connectionString = connectionString;
+      SqlConnection = new SqlConnection(_connectionString);
       _server = new Microsoft.SqlServer.Management.Smo.Server(new ServerConnection(SqlConnection));
       _credentialName = credentialName;
     }
@@ -284,9 +286,7 @@ namespace AgDatabaseMove.SmoFacade
 
     public void CheckDBConnection(string dbName, int connectionTimeout)
     {
-      // Make sure to set `PersistSecurityInfo=True` in the connection string otherwise the password parameter might not be present
-      // https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlconnection.connectionstring?view=dotnet-plat-ext-5.0#remarks
-      var connectionString = new SqlConnectionStringBuilder(SqlConnection.ConnectionString)
+      var connectionString = new SqlConnectionStringBuilder(_connectionString)
       {
         ConnectTimeout = connectionTimeout,
         InitialCatalog = dbName
