@@ -19,10 +19,12 @@ namespace AgDatabaseMove.SmoFacade
   {
     internal readonly string _credentialName;
     internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
+    private readonly string _connectionString;
 
     public Server(string connectionString, string credentialName = null)
     {
-      SqlConnection = new SqlConnection(connectionString);
+      _connectionString = connectionString;
+      SqlConnection = new SqlConnection(_connectionString);
       _server = new Microsoft.SqlServer.Management.Smo.Server(new ServerConnection(SqlConnection));
       _credentialName = credentialName;
     }
@@ -280,6 +282,22 @@ namespace AgDatabaseMove.SmoFacade
         throw new Exception("No matching login found");
 
       matchingLogin.AddRole(role.Name);
+    }
+
+    public void CheckDBConnection(string dbName, int connectionTimeout)
+    {
+      var connectionString = new SqlConnectionStringBuilder(_connectionString)
+      {
+        ConnectTimeout = connectionTimeout,
+        InitialCatalog = dbName
+      }.ToString();
+
+      using var connection = new SqlConnection(connectionString);
+      connection.Open();
+      using var cmd = connection.CreateCommand();
+      cmd.CommandText = "SELECT 1";
+      using var reader = cmd.ExecuteReader();
+      reader.Read();
     }
   }
 }

@@ -236,6 +236,11 @@ namespace AgDatabaseMove
       _listener.Primary.Database(Name).MultiUserMode();
     }
 
+    public void CheckDBConnections(int connectionTimeout)
+    {
+      _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
+    }
+    
     private void CheckLoginExists(Server server, AvailabilityGroup availabilityGroup, string loginName)
     {
       var matchingLogins = server.Logins.Where(l => l.Name == loginName);
