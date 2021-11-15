@@ -45,20 +45,28 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     public void Drop()
     {
-      var policy = Policy
-        .Handle<FailedOperationException>()
-        .Or<TimeoutException>()
+      var policyPrep = Policy
+        .Handle<Exception>()
         .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
-      policy.Execute(() => {
-        if(string.IsNullOrEmpty(_database.AvailabilityGroupName))
-          return;
-        if(_database.AvailabilityDatabaseSynchronizationState >
-           AvailabilityDatabaseSynchronizationState.NotSynchronizing)
-          throw new
-            TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
+      policyPrep.Execute(() => {
+        try {
+          if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
+            throw
+              new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
+          if(_database.AvailabilityDatabaseSynchronizationState >
+             AvailabilityDatabaseSynchronizationState.NotSynchronizing)
+            throw new
+              Exception($"Cannot kill the database {Name} until AvailabilityDatabaseSynchronizationState is inaccessible");
+        }
+        catch(
+          PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
       });
+
+      var policy = Policy
+        .Handle<FailedOperationException>()
+        .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
     }
@@ -76,10 +84,10 @@ namespace AgDatabaseMove.SmoFacade
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
                   "WHERE s.last_lsn >= (" +
-                    "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
-                    "WHERE [type] = 'D' " +
-                    "AND database_name = @dbName " +
-                    "AND is_copy_only = 0" +
+                  "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
+                  "WHERE [type] = 'D' " +
+                  "AND database_name = @dbName " +
+                  "AND is_copy_only = 0" +
                   ") " +
                   "AND s.database_name = @dbName " +
                   "AND is_copy_only = 0 " +
