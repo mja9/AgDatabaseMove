@@ -92,6 +92,12 @@ namespace AgDatabaseMove.SmoFacade
       return (int)reader["free_size_mb"];
     }
 
+    public void Status()
+    {
+      if(_server.Status != ServerStatus.Online)
+        throw new Exception($"Server status not online: {Name}");
+    }
+
     private static string GetFileName(string physicalName)
     {
       if(Path.IsPathRooted(physicalName))

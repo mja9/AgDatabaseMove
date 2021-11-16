@@ -19,6 +19,7 @@ namespace AgDatabaseMove
 
   public interface IAgDatabase
   {
+    bool AllAgNodesOnline();
     bool Restoring { get; }
     string Name { get; }
     bool Exists();
@@ -82,6 +83,14 @@ namespace AgDatabaseMove
     public bool Exists()
     {
       return _listener.Primary.Database(Name) != null;
+    }
+
+    public bool AllAgNodesOnline()
+    {
+      try { _listener.ForEachAgInstance(s => s.Status()); }
+      catch(Exception) { return false; }
+
+      return true;
     }
 
     /// <summary>
