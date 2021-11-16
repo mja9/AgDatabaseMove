@@ -107,12 +107,9 @@ namespace AgDatabaseMove.SmoFacade
         DefaultDatabase = loginProperties.DefaultDatabase
       };
 
-      if (loginProperties.Sid != null)
-      {
-        login.Sid = loginProperties.Sid;
-      }
+      if(loginProperties.Sid != null) login.Sid = loginProperties.Sid;
 
-      if (loginProperties.LoginType == LoginType.SqlLogin) {
+      if(loginProperties.LoginType == LoginType.SqlLogin) {
         if(loginProperties.PasswordHash != null)
           login.Create(loginProperties.PasswordHash, LoginCreateOptions.IsHashed);
         else if(loginProperties.Password != null)
