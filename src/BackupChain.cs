@@ -29,11 +29,12 @@ namespace AgDatabaseMove
         .ToList();
 
       var orderedBackups = MostRecentFullBackup(backups).ToList();
-      orderedBackups.AddRange(MostRecentDiffBackup(backups, orderedBackups.First()));
+      var fullBackup = orderedBackups.First();
+      orderedBackups.AddRange(MostRecentDiffBackup(backups, fullBackup));
 
       var prevBackup = orderedBackups.Last();
       IEnumerable<BackupMetadata> nextLogBackups;
-      while((nextLogBackups = NextLogBackup(backups, prevBackup)).Any()) {
+      while((nextLogBackups = NextLogBackup(backups, prevBackup, fullBackup)).Any()) {
         orderedBackups.AddRange(nextLogBackups);
         prevBackup = orderedBackups.Last();
       }
@@ -73,8 +74,8 @@ namespace AgDatabaseMove
       BackupMetadata lastFullBackup)
     {
       var diffBackupsOrdered = backups
-        .Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
-                    b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
+        .Where(b => b.BackupType == BackupFileTools.BackupType.Diff 
+                    && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn).ToList();
 
       if(!diffBackupsOrdered.Any()) return new List<BackupMetadata>();
@@ -84,11 +85,12 @@ namespace AgDatabaseMove
     }
 
     private static IEnumerable<BackupMetadata> NextLogBackup(IEnumerable<BackupMetadata> backups,
-      BackupMetadata prevBackup)
+      BackupMetadata prevBackup, BackupMetadata lastFullBackup)
     {
       // also gets all the stripes of the next backup
-      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
-                                prevBackup.LastLsn >= b.FirstLsn && prevBackup.LastLsn + 1 < b.LastLsn);
+      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log 
+                                && prevBackup.LastLsn >= b.FirstLsn && prevBackup.LastLsn + 1 < b.LastLsn
+                                && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn);
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)
