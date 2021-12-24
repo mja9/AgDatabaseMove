@@ -15,7 +15,8 @@ namespace AgDatabaseMove.Unit
       new object[] { GetBackupList() },
       new object[] { GetBackupListWithStripes() },
       new object[] { GetBackupListWithoutDiff() },
-      new object[] { GetBackupListWithoutLogs() }
+      new object[] { GetBackupListWithoutLogs() },
+      new object[] { GetBackupListAfterRestore() }
     };
 
 
@@ -92,6 +93,72 @@ namespace AgDatabaseMove.Unit
         }
       };
     }
+    private static List<BackupMetadata> GetBackupListAfterRestore()
+    {
+      return new List<BackupMetadata> {
+        // Full backup on Server A
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Full,
+          DatabaseBackupLsn = 900,
+          CheckpointLsn = 001,
+          FirstLsn = 1,
+          LastLsn = 2,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          StartTime = DateTime.Parse("2021-12-24 02:00:00.000")
+        },
+        // Log backup on Server A
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 001, // This will refer to the Full backup's checkpoint
+          CheckpointLsn = 002,
+          FirstLsn = 2,
+          LastLsn = 3,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          StartTime = DateTime.Parse("2021-12-24 02:00:01.000")
+        },
+        // Restore db to Server B
+        // Diff backup on Server B
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Diff,
+          DatabaseBackupLsn = 001, // This will refer to the Full backup's checkpoint
+          CheckpointLsn = 003,
+          FirstLsn = 3,
+          LastLsn = 4,
+          DatabaseName = "TestDb",
+          ServerName = "ServerB",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          StartTime = DateTime.Parse("2021-12-24 02:00:02.000")
+        },
+        // 2 Log backups taken at the same time
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 001, // This will refer to the Full backup's checkpoint
+          CheckpointLsn = 004,
+          FirstLsn = 4,
+          LastLsn = 5,
+          DatabaseName = "TestDb",
+          ServerName = "ServerB",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          StartTime = DateTime.Parse("2021-12-24 02:00:03.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 001, // This will refer to the Full backup's checkpoint
+          CheckpointLsn = 005,
+          FirstLsn = 4,
+          LastLsn = 6,
+          DatabaseName = "TestDb",
+          ServerName = "ServerB",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          StartTime = DateTime.Parse("2021-12-24 02:00:03.000")
+        },
+      };
+    }
+
 
     private static List<BackupMetadata> GetBackupListWithoutLogs()
     {
@@ -156,6 +223,7 @@ namespace AgDatabaseMove.Unit
         }
         else if(currentBackup.BackupType == BackupFileTools.BackupType.Log) {
           Assert.True(foundFull);
+          Assert.Equal(full.CheckpointLsn, currentBackup.DatabaseBackupLsn);
           Assert.True(currentBackup.FirstLsn >= lastBackup.LastLsn);
           foundLog = true;
         }
