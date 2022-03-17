@@ -35,8 +35,23 @@ namespace AgDatabaseMove.SmoFacade
 
     public void RestoreWithRecovery()
     {
-      // TODO: Sql injection paranoia. - can we execute normally with a parameterized statement here?
-      _database.Parent.Databases["master"].ExecuteNonQuery($"RESTORE DATABASE [{_database.Name}] WITH RECOVERY");
+      //// TODO: Sql injection paranoia. - can we execute normally with a parameterized statement here?
+      //_database.Parent.Databases["master"].ExecuteNonQuery($"RESTORE DATABASE [{_database.Name}] WITH RECOVERY");
+
+      // DOCS: https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/tasks/backing-up-and-restoring-databases-and-transaction-logs?view=sql-server-ver15#backing-up-databases-and-transaction-logs-in-visual-c
+      // DOCS: https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.backuprestorebase.executesql?view=sql-smo-160#microsoft-sqlserver-management-smo-backuprestorebase-executesql(microsoft-sqlserver-management-smo-server-system-collections-specialized-stringcollection)
+      // Define a Restore object variable.  
+      Restore rs = new Restore() {
+        Action = RestoreActionType.Database, // only log is allowed if zero BackupDeviceItem's are provided
+        NoRecovery = false,// with recovery
+        Database = _database.Name // Specify the database name
+      };
+      // Create another file device for the differential backup and add the Backup object.   
+      BackupDeviceItem bdi = default(BackupDeviceItem);
+      bdi = new BackupDeviceItem("", DeviceType.File);
+      rs.Devices.Add(bdi);
+
+      rs.SqlRestore(_database.Parent); // Restore the full database backup with recovery.   
       _database.Refresh();
     }
 
