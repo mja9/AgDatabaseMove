@@ -89,9 +89,6 @@ namespace AgDatabaseMove
     /// </summary>
     public void Delete()
     {
-      // Deleting the database while it is initializing will leave it in a state where system redo threads are stuck.
-      // This leaves the database in a state that a SQL Server service restart prior to deletion.
-      _listener.ForEachAgInstance(WaitForInitialization);
       _listener.AvailabilityGroup.Remove(Name);
       _listener.ForEachAgInstance(s => s.Database(Name)?.Drop());
     }
@@ -156,7 +153,7 @@ namespace AgDatabaseMove
 
     public void DropAllLogins()
     {
-      foreach(var loginProp in AssociatedLogins()) DropLogin(loginProp);
+      _listener.ForEachAgInstance(s => s.Database(Name)?.DropAssociatedLogins());
     }
 
     public void AddLogin(LoginProperties login)
@@ -185,18 +182,6 @@ namespace AgDatabaseMove
     public void FullBackup()
     {
       _listener.Primary.FullBackup(Name, _backupPathSqlQuery);
-    }
-
-    private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
-    {
-      var policy = Policy
-        .Handle<TimeoutException>()
-        .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
-
-      policy.Execute(() => {
-        if(availabilityGroup.IsInitializing(Name))
-          throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
-      });
     }
 
     public void FinalizePrimary()
