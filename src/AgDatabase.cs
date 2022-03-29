@@ -12,9 +12,13 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
+  using System.Threading.Tasks;
   using Exceptions;
+  using Microsoft.SqlServer.Management.Smo;
   using Polly;
   using SmoFacade;
+  using AvailabilityGroup = SmoFacade.AvailabilityGroup;
+  using Server = SmoFacade.Server;
 
 
   public interface IAgDatabase
@@ -158,7 +162,29 @@ namespace AgDatabaseMove
 
     public void AddLogin(LoginProperties login)
     {
-      _listener.ForEachAgInstance(server => server.AddLogin(login));
+      if (login.LoginType == LoginType.SqlLogin && login.Sid == null) {
+        AddNewSqlLogin(login);
+      } else
+      {
+        _listener.ForEachAgInstance(server => server.AddLogin(login));
+      }
+    }
+
+    /// <summary>
+    /// Creates a new Sql login across all members of the availability group.
+    /// Assumes associated database has been created and the login being
+    /// created does not previously exist. In the case of 
+    /// Sql logins on availability groups, the login must first be created on
+    /// a singular instance in the availability group, in this case the primary,
+    /// so Sql Server will generate a new SID. This SID will be saved and used to
+    /// create the same login on each ag replica.
+    /// </summary>
+    /// <param name="login"></param> A new login to create across all members of an availability group.
+    private void AddNewSqlLogin(LoginProperties login)
+    {
+      var createdLogin = _listener.Primary.AddLogin(login);
+      login.Sid = createdLogin.Sid;
+      Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()
